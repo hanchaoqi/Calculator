@@ -11,7 +11,7 @@
 	- Term"/"Primary
 	- Term"%"Primary
 - Primary
-        - Number
+	- Number
 	- "("Expression")"
 	- Primary"!"
 - Number
