@@ -27,14 +27,17 @@ double primary();
 
 int main()
 {
+	cout << "Welcome to our simple calculator." << endl;
+	cout << "Please enter expression using floating-point numbers,enter '=' end it." << endl;
+	cout << "You can use '+','-','*','/'in expression,also you can use '(' and ')'." << endl;
 	try
 	{
 		double val = 0;
 		while (cin)
 		{
 			Token t = ts.get();
-			if (t.kind == ';')
-				cout << "=" << val << endl;
+			if (t.kind == '=')
+				cout << val << endl;
 			else if (t.kind == 'q')
 				break;
 			else
@@ -61,9 +64,9 @@ int main()
 double expression()
 {
 	double left = term();
+	Token t = ts.get();
 	while (true)
 	{
-		Token t = ts.get();
 		switch (t.kind)
 		{
 		case '+':
@@ -84,9 +87,9 @@ double expression()
 double term()
 {
 	double left = primary();
+	Token t = ts.get();
 	while (true)
 	{
-		Token t = ts.get();
 		switch (t.kind)
 		{
 		case '*':
@@ -115,11 +118,11 @@ double primary()
 	{
 	case '(':
 	{
-				t = expression();
-				Token tt = ts.get();
-				if (tt.kind != ')')
+				double data = expression();
+				t = ts.get();
+				if (t.kind != ')')
 					error("')' excepted");
-				return t.value;
+				return data;
 	}
 	case '8':
 		return t.value;
@@ -151,7 +154,7 @@ Token Token_stream::get()
 	switch (ch)
 	{
 	case 'q':
-	case ';':
+	case '=':
 	case '(': case ')': case '+': case '-': case '*': case '/': case '%':
 		return Token(ch);
 	case '.':
