@@ -29,7 +29,7 @@ int main()
 {
 	cout << "Welcome to our simple calculator." << endl;
 	cout << "Please enter expression using floating-point numbers,enter '=' end it." << endl;
-	cout << "You can use '+','-','*','/'in expression,also you can use '(' and ')'." << endl;
+	cout << "You can use '+','-','*','/','!' in expression,also you can use '(',')','{','}'." << endl;
 	try
 	{
 		double val = 0;
@@ -114,21 +114,44 @@ double term()
 double primary()
 {
 	Token t = ts.get();
+	double data = 0;
 	switch (t.kind)
 	{
 	case '(':
 	{
-				double data = expression();
+				data = expression();
 				t = ts.get();
 				if (t.kind != ')')
 					error("')' excepted");
-				return data;
+				break;
+	}
+	case '{':
+	{
+				data = expression();
+				t = ts.get();
+				if (t.kind != '}')
+					error("'}' excepted");
+				break;
 	}
 	case '8':
-		return t.value;
+		data = t.value;
+		break;
 	default:
 		error("Primary Excepted");
 	}
+	t = ts.get();
+	if (t.kind == '!')
+	{
+		if (data == 0)
+			return 1;
+		for (int j = data - 1; j > 0; j--)
+			data *= j;
+	}
+	else
+	{
+		ts.putback(t);
+	}
+	return data;
 }
 
 Token_stream::Token_stream()
@@ -155,7 +178,7 @@ Token Token_stream::get()
 	{
 	case 'q':
 	case '=':
-	case '(': case ')': case '+': case '-': case '*': case '/': case '%':
+	case '(': case ')': case '+': case '-': case '*': case '/': case '%': case '{': case '}': case '!':
 		return Token(ch);
 	case '.':
 	case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
