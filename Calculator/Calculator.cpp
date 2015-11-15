@@ -21,30 +21,65 @@ private:
 };
 
 Token_stream ts;
+//For Arithmetic Calculator
 double expression();
 double term();
 double primary();
 
+//For Logic Calculator
+int a();
+int b();
+int c();
+int d();
+
 int main()
 {
 	cout << "Welcome to our simple calculator." << endl;
-	cout << "Please enter expression using floating-point numbers,enter '=' end it." << endl;
-	cout << "You can use '+','-','*','/','!' in expression,also you can use '(',')','{','}'." << endl;
+	cout << "Select calculator's mode(Logic calculator -- 0 ,Arithmetic Calculator -- 1):" << endl;
 	try
 	{
-		double val = 0;
-		while (cin)
+		char mode;
+		cin >> mode;
+
+		if (mode == '0')
 		{
-			Token t = ts.get();
-			if (t.kind == '=')
-				cout << val << endl;
-			else if (t.kind == 'q')
-				break;
-			else
-				ts.putback(t);
-			val = expression();
+			cout << "Please enter expression using binary numbers,enter '=' end it." << endl;
+			cout << "You can use '~','!','|','&','^' in expression,also you can use '(',')','{','}'." << endl;
+
+			double val = 0;
+			while (cin)
+			{
+				Token t = ts.get();
+				if (t.kind == '=')
+					cout << val << endl;
+				else if (t.kind == 'q')
+					break;
+				else
+					ts.putback(t);
+				val = a();
+			}
+
 		}
-		keep_window_open();
+		else if (mode == '1')
+		{
+			cout << "Please enter expression using floating-point numbers,enter '=' end it." << endl;
+			cout << "You can use '+','-','*','/','!' in expression,also you can use '(',')','{','}'." << endl;
+
+			double val = 0;
+			while (cin)
+			{
+				Token t = ts.get();
+				if (t.kind == '=')
+					cout << val << endl;
+				else if (t.kind == 'q')
+					break;
+				else
+					ts.putback(t);
+				val = expression();
+			}
+		}
+		else
+			error("Wrong Mode Index");
 	}
 	catch (exception &e)
 	{
@@ -58,6 +93,7 @@ int main()
 		keep_window_open();
 		return 2;
 	}
+	keep_window_open();
 	return 0;
 }
 
@@ -157,6 +193,106 @@ double primary()
 	return data;
 }
 
+int a()
+{
+	int left = b();
+	Token t = ts.get();
+	while (true)
+	{
+		if (t.kind == '|')
+		{
+			left |= b();
+			t = ts.get();
+		}
+		else
+		{
+			ts.putback(t);
+			return left;
+		}
+	}
+}
+int b()
+{
+	int left = c();
+	Token t = ts.get();
+	while (true)
+	{
+		if (t.kind == '^')
+		{
+			left ^= c();
+			t = ts.get();
+		}
+		else
+		{
+			ts.putback(t);
+			return left;
+		}
+	}
+}
+int c()
+{
+	int left = d();
+	Token t = ts.get();
+	while (true)
+	{
+		if (t.kind == '&')
+		{
+			left &= d();
+			t = ts.get();
+		}
+		else
+		{
+			ts.putback(t);
+			return left;
+		}
+	}
+}
+int d()
+{
+	Token t = ts.get();
+	int data = 0;
+	switch (t.kind)
+	{
+	case '(':
+	{
+				data = a();
+				t = ts.get();
+				if (t.kind != ')')
+				{
+					error("')' Except");
+				}
+				break;
+	}
+	case '{':
+	{
+				data = a();
+				t = ts.get();
+				if (t.kind != '}')
+				{
+					error("'}' Except");
+				}
+				break;
+	}
+	case '~': case '!':
+	{
+				  data = a();
+				  if (t.kind == '~')
+					  data = ~data;
+				  else if (t.kind == '!')
+					  data = !data;
+	}
+	case '8':
+		data = t.value;
+		break;
+	case 'q':
+		ts.putback(t);
+		return data;
+	default:
+		error("d Except");
+	}
+	return data;
+}
+
 Token_stream::Token_stream()
 	: full(false), buffer(0){}
 void Token_stream::putback(Token t)
@@ -182,6 +318,7 @@ Token Token_stream::get()
 	case 'q':
 	case '=':
 	case '(': case ')': case '+': case '-': case '*': case '/': case '%': case '{': case '}': case '!':
+	case '~': case '&': case '|': case '^':
 		return Token(ch);
 	case '.':
 	case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
