@@ -48,7 +48,7 @@ int main()
 	}
 	catch (exception &e)
 	{
-		cerr << "error" << e.what() << endl;
+		cerr << "Error: " << e.what() << endl;
 		keep_window_open();
 		return 1;
 	}
@@ -136,6 +136,9 @@ double primary()
 	case '8':
 		data = t.value;
 		break;
+	case 'q':
+		ts.putback(t);
+		return data;
 	default:
 		error("Primary Excepted");
 	}
