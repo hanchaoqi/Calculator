@@ -84,13 +84,13 @@ int main()
 	catch (exception &e)
 	{
 		cerr << "Error: " << e.what() << endl;
-		keep_window_open();
+		keep_window_open("~~");
 		return 1;
 	}
 	catch (...)
 	{
 		cerr << "unkown exception"<< endl;
-		keep_window_open();
+		keep_window_open("~~");
 		return 2;
 	}
 	keep_window_open();
@@ -141,6 +141,17 @@ double term()
 					t = ts.get();
 					break;
 		}
+		case '%':
+		{
+					int a = narrow_cast<int>(left);
+					int b = narrow_cast<int>(term());
+					if (b == 0)
+						error("%:divide by zero");
+					left = a%b;
+					t = ts.get();
+					break;
+
+		}
 		default:
 			ts.putback(t);
 			return left;
@@ -175,6 +186,10 @@ double primary()
 	case 'q':
 		ts.putback(t);
 		return data;
+	case '-':
+		return -primary();
+	case '+':
+		return primary();
 	default:
 		error("Primary Excepted");
 	}
