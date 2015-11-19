@@ -1,4 +1,12 @@
 #include "std_lib_facilities.h"
+
+const char result = '=';
+const char number = '8';
+const char quit = 'q';
+const char flag_L = '0';
+const char flag_A = '1';
+const string prompt = "> ";
+
 class Token
 {
 public:
@@ -15,6 +23,7 @@ public:
 	Token_stream();
 	Token get();
 	void putback(Token t);
+	void ignore(char c);
 private:
 	bool full;
 	Token buffer;
@@ -32,52 +41,22 @@ int b();
 int c();
 int d();
 
+void calculate_A();
+void calculate_L();
+void clean_up_mess();
 int main()
 {
 	cout << "Welcome to our simple calculator." << endl;
-	cout << "Select calculator's mode(Logic calculator -- 0 ,Arithmetic Calculator -- 1):" << endl;
+	cout << "Select calculator's mode(Logic calculator -- "<<flag_L<<" ,Arithmetic Calculator -- "<<flag_A<<"):" << endl;
 	try
 	{
 		char mode;
 		cin >> mode;
 
-		if (mode == '0')
-		{
-			cout << "Please enter expression using binary numbers,enter '=' end it." << endl;
-			cout << "You can use '~','!','|','&','^' in expression,also you can use '(',')','{','}'." << endl;
-
-			double val = 0;
-			while (cin)
-			{
-				Token t = ts.get();
-				if (t.kind == '=')
-					cout << val << endl;
-				else if (t.kind == 'q')
-					break;
-				else
-					ts.putback(t);
-				val = a();
-			}
-
-		}
-		else if (mode == '1')
-		{
-			cout << "Please enter expression using floating-point numbers,enter '=' end it." << endl;
-			cout << "You can use '+','-','*','/','!' in expression,also you can use '(',')','{','}'." << endl;
-
-			double val = 0;
-			while (cin)
-			{
-				Token t = ts.get();
-				if (t.kind == '=')
-					cout << val << endl;
-				else if (t.kind == 'q')
-					break;
-				else
-					ts.putback(t);
-				val = expression();
-			}
-		}
+		if (mode == flag_L)
+			calculate_L();
+		else if (mode == flag_A)
+			calculate_A();
 		else
 			error("Wrong Mode Index");
 	}
@@ -95,6 +74,59 @@ int main()
 	}
 	keep_window_open();
 	return 0;
+}
+
+void calculate_A()
+{
+	cout << "Please enter expression using floating-point numbers,enter '=' end it." << endl;
+	cout << "You can use '+','-','*','/','!' in expression,also you can use '(',')','{','}'." << endl;
+
+	double val = 0;
+	while (cin)
+	try
+	{
+		Token t = ts.get();
+		if (t.kind == result)
+			cout << val << endl;
+		else if (t.kind == quit)
+			break;
+		else
+			ts.putback(t);
+		val = expression();
+	}
+	catch (exception &e)
+	{
+		cerr << e.what() << endl;
+		clean_up_mess();
+	}
+}
+void calculate_L()
+{
+	cout << "Please enter expression using binary numbers,enter '=' end it." << endl;
+	cout << "You can use '~','!','|','&','^' in expression,also you can use '(',')','{','}'." << endl;
+
+	double val = 0;
+	while (cin)
+	try
+	{
+		Token t = ts.get();
+		if (t.kind == result)
+			cout << val << endl;
+		else if (t.kind == quit)
+			break;
+		else
+			ts.putback(t);
+		val = a();
+	}
+	catch (exception &e)
+	{
+		cerr << e.what() << endl;
+		clean_up_mess();
+	}
+}
+void clean_up_mess()
+{
+	ts.ignore(result);
 }
 
 double expression()
@@ -180,10 +212,10 @@ double primary()
 					error("'}' excepted");
 				break;
 	}
-	case '8':
+	case number:
 		data = t.value;
 		break;
-	case 'q':
+	case quit:
 		ts.putback(t);
 		return data;
 	case '-':
@@ -296,10 +328,10 @@ int d()
 				  else if (t.kind == '!')
 					  data = !data;
 	}
-	case '8':
+	case number:
 		data = t.value;
 		break;
-	case 'q':
+	case quit:
 		ts.putback(t);
 		return data;
 	default:
@@ -330,10 +362,11 @@ Token Token_stream::get()
 	cin >> ch;
 	switch (ch)
 	{
-	case 'q':
-	case '=':
-	case '(': case ')': case '+': case '-': case '*': case '/': case '%': case '{': case '}': case '!':
+	case quit:
+	case result:
+	case '(': case ')': case '{': case '}':
 	case '~': case '&': case '|': case '^':
+	case '+': case '-': case '*': case '/': case '%':case '!':
 		return Token(ch);
 	case '.':
 	case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
@@ -341,9 +374,24 @@ Token Token_stream::get()
 				  cin.putback(ch);
 				  double data;
 				  cin >> data;
-				  return Token('8', data);
+				  return Token(number, data);
 	}
 	default:
 		error("Bad token");
+	}
+}
+void Token_stream::ignore(char c)
+{
+	if (full&&c == buffer.kind)
+	{
+		full = false;
+		return;
+	}
+	full = false;
+	char ch = 0;
+	while (cin >> ch)
+	{
+		if (ch == c)
+			return;
 	}
 }
