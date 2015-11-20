@@ -3,6 +3,14 @@
 
 ##文法规则
 ###算术计算器
+- Calculation
+    - Statement
+    - Print
+    - Quit
+    - Calculation Statement
+- Statement
+    - Declaration
+    - Expression
 - Expression
 	 - Term
 	 - Expression"+"Term

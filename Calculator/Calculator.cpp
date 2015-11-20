@@ -1,21 +1,29 @@
 #include "std_lib_facilities.h"
 
-const char result = '=';
+const string result = "= ";
 const char number = '8';
+const char print = ';';
 const char quit = 'q';
 const char flag_L = '0';
 const char flag_A = '1';
 const string prompt = "> ";
+
+const char name = 'v';
+const char let = 'L';
+const string declkey = "let";
 
 class Token
 {
 public:
 	char kind;
 	double value;
+	string name;
 	Token(char ch)
 		:kind(ch), value(0){}
 	Token(char ch, double val)
 		:kind(ch), value(val){}
+	Token(char ch, string s)
+		:kind(ch), name(s){}
 };
 class Token_stream
 {
@@ -28,13 +36,27 @@ private:
 	bool full;
 	Token buffer;
 };
-
+class Variable{
+public:
+	string name;
+	double value;
+	Variable(string n, double v) :name(n), value(v){}
+};
 Token_stream ts;
+vector<Variable> var_table;
+double get_value(string name);
+void set_value(string name, double value);
+bool is_declared(string name);
+double define_name(string name, double value);
+
+
+
 //For Arithmetic Calculator
+double statement();
 double expression();
 double term();
 double primary();
-
+double declaration();
 //For Logic Calculator
 int a();
 int b();
@@ -46,6 +68,9 @@ void calculate_L();
 void clean_up_mess();
 int main()
 {
+	define_name("pi", 3.1415926535);
+	define_name("e",2.7182818284);
+
 	cout << "Welcome to our simple calculator." << endl;
 	cout << "Select calculator's mode(Logic calculator -- "<<flag_L<<" ,Arithmetic Calculator -- "<<flag_A<<"):" << endl;
 	try
@@ -85,14 +110,14 @@ void calculate_A()
 	while (cin)
 	try
 	{
+		cout << prompt;
 		Token t = ts.get();
-		if (t.kind == result)
-			cout << val << endl;
-		else if (t.kind == quit)
-			break;
-		else
-			ts.putback(t);
-		val = expression();
+		while (t.kind == print)
+			t = ts.get();
+		if (t.kind == quit)
+			return;
+		ts.putback(t);
+		cout << result << statement() << endl;
 	}
 	catch (exception &e)
 	{
@@ -109,14 +134,14 @@ void calculate_L()
 	while (cin)
 	try
 	{
+		cout << prompt;
 		Token t = ts.get();
-		if (t.kind == result)
-			cout << val << endl;
-		else if (t.kind == quit)
-			break;
-		else
-			ts.putback(t);
-		val = a();
+		while (t.kind == print)
+			t = ts.get();
+		if(t.kind == quit)
+			return;
+		ts.putback(t);
+		cout << result << a() << endl;
 	}
 	catch (exception &e)
 	{
@@ -126,9 +151,21 @@ void calculate_L()
 }
 void clean_up_mess()
 {
-	ts.ignore(result);
+	ts.ignore(print);
 }
 
+double statement()
+{
+	Token t = ts.get();
+	switch (t.kind)
+	{
+	case let:
+		return declaration();
+	default:
+		ts.putback(t);
+		return expression();
+	}
+}
 double expression()
 {
 	double left = term();
@@ -215,6 +252,9 @@ double primary()
 	case number:
 		data = t.value;
 		break;
+	case name:
+		data = get_value(t.name);
+		break;
 	case quit:
 		ts.putback(t);
 		return data;
@@ -238,6 +278,21 @@ double primary()
 		ts.putback(t);
 	}
 	return data;
+}
+double declaration()
+{
+	Token t = ts.get();
+	if (t.kind != name)
+		error("name expected in declaration");
+
+	string var_name = t.name;
+
+	Token t2 = ts.get();
+	if (t2.kind != '=')
+		error("= missing in declarations of ",var_name);
+	double d = expression();
+	define_name(var_name, d);
+	return d;
 }
 
 int a()
@@ -363,7 +418,8 @@ Token Token_stream::get()
 	switch (ch)
 	{
 	case quit:
-	case result:
+	case print:
+	case '=':
 	case '(': case ')': case '{': case '}':
 	case '~': case '&': case '|': case '^':
 	case '+': case '-': case '*': case '/': case '%':case '!':
@@ -377,6 +433,17 @@ Token Token_stream::get()
 				  return Token(number, data);
 	}
 	default:
+		if (isalpha(ch))
+		{
+			string s;
+			s += ch;
+			while (cin.get(ch) && (isalpha(ch) || isdigit(ch)))
+				s += ch;
+			cin.putback(ch);
+			if (s == declkey)
+				return Token(let);
+			return Token(name, s);
+		}
 		error("Bad token");
 	}
 }
@@ -394,4 +461,36 @@ void Token_stream::ignore(char c)
 		if (ch == c)
 			return;
 	}
+}
+
+double get_value(string name)
+{
+	for (int i = 0; i < var_table.size();i++)
+	if (var_table[i].name == name)
+		return var_table[i].value;
+	error("get:undefined variable ", name);
+}
+void set_value(string name, double value)
+{
+	for (int i = 0; i < var_table.size();i++)
+	if (var_table[i].name == name)
+	{
+		var_table[i].value == value;
+		return;
+	}
+	error("set: undefined variable ",name);
+}
+bool is_declared(string name)
+{
+	for (int i = 0; i < var_table.size(); i++)
+	if (var_table[i].name == name)
+		return true;
+	return false;
+}
+double define_name(string name, double value)
+{
+	if (is_declared(name))
+		error(name, "declared twice");
+	var_table.push_back(Variable(name, value));
+	return value;
 }
