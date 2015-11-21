@@ -6,6 +6,7 @@ const char print = ';';
 const char quit = 'q';
 const char flag_L = '0';
 const char flag_A = '1';
+const char help = '?';
 const string prompt = "> ";
 
 const char name = 'v';
@@ -16,6 +17,9 @@ const char sqrt_k = 'S';
 const string sqrtkey = "sqrt";
 const char pow_k = 'P';
 const string powkey = "pow";
+const char const_k = 'C';
+const char var_k = 'V';
+const string constkey = "const";
 
 class Token
 {
@@ -30,6 +34,7 @@ public:
 	Token(char ch, string s)
 		:kind(ch), name(s){}
 };
+
 class Token_stream
 {
 public:
@@ -41,19 +46,29 @@ private:
 	bool full;
 	Token buffer;
 };
+
 class Variable{
 public:
 	string name;
+	char flag;
 	double value;
-	Variable(string n, double v) :name(n), value(v){}
+	Variable(string n, double v, char f) :name(n), value(v), flag(f){}
 };
-Token_stream ts;
-vector<Variable> var_table;
-double get_value(string name);
-void set_value(string name, double value);
-bool is_declared(string name);
-double define_name(string name, double value);
 
+class Symbol_table{
+public:
+	Symbol_table();
+	double get(string name);
+	void set(string name, double value);
+	bool is_declared(string name);
+	double declare(string name, double value, char flag);
+private:
+	vector<Variable> var_table;
+};
+
+
+Token_stream ts;
+Symbol_table sym_table;
 
 
 //For Arithmetic Calculator
@@ -61,7 +76,7 @@ double statement();
 double expression();
 double term();
 double primary();
-double declaration();
+double declaration(char flag);
 double get_sqrt();
 double get_pow();
 //For Logic Calculator
@@ -73,24 +88,34 @@ int d();
 void calculate_A();
 void calculate_L();
 void clean_up_mess();
+void get_help();
+
 int main()
 {
-	define_name("pi", 3.1415926535);
-	define_name("e",2.7182818284);
+	sym_table.declare("pi", 3.1415926535,const_k);
+	sym_table.declare("e", 2.7182818284, const_k);
 
-	cout << "Welcome to our simple calculator." << endl;
-	cout << "Select calculator's mode(Logic calculator -- "<<flag_L<<" ,Arithmetic Calculator -- "<<flag_A<<"):" << endl;
+	cout << "Welcome to our simple calculator.\nInput " << help << " get help." << endl;
+begin:	cout << "Select calculator's mode(Logic calculator -- "<<flag_L<<" ,Arithmetic Calculator -- "<<flag_A<<"):" << endl;
 	try
 	{
 		char mode;
 		cin >> mode;
 
-		if (mode == flag_L)
+		switch (mode)
+		{
+		case flag_L:
 			calculate_L();
-		else if (mode == flag_A)
+			break;
+		case flag_A:
 			calculate_A();
-		else
-			error("Wrong Mode Index");
+			break;
+		case help:
+			get_help();
+			goto begin;
+		default:
+			error("Invalid Input");
+		}			
 	}
 	catch (exception &e)
 	{
@@ -110,9 +135,6 @@ int main()
 
 void calculate_A()
 {
-	cout << "Please enter expression using floating-point numbers,enter '=' end it." << endl;
-	cout << "You can use '+','-','*','/','!' in expression,also you can use '(',')','{','}'." << endl;
-
 	double val = 0;
 	while (cin)
 	try
@@ -134,9 +156,6 @@ void calculate_A()
 }
 void calculate_L()
 {
-	cout << "Please enter expression using binary numbers,enter '=' end it." << endl;
-	cout << "You can use '~','!','|','&','^' in expression,also you can use '(',')','{','}'." << endl;
-
 	double val = 0;
 	while (cin)
 	try
@@ -160,6 +179,19 @@ void clean_up_mess()
 {
 	ts.ignore(print);
 }
+void get_help()
+{
+	cout << "Welcome to our simple calculator." << endl; 
+	cout << flag_L << " -- Logic calculator\n" << flag_A << " -- Arithmetic Calculator\n" <<help<<" -- Get Help"<< endl;
+	
+	cout << "In Logic calculator please enter expression using binary numbers,enter '=' end it." << endl;
+	cout << "You can use '~','!','|','&','^' in expression,also you can use '(',')','{','}'.\n" << endl;
+
+	cout << "In Arithmetic Calculator please enter expression using floating-point numbers,enter '=' end it." << endl;
+	cout << "You can use '+','-','*','/','!' in expression,also you can use '(',')','{','}'." << endl;
+	cout << "sqrt(x) and pow(x,y) is also avaliable." << endl;
+	cout << "You can use 'let' assignment a variable and use '=' modify variable,but if you use 'const' before 'let',you can't modify it." << endl;
+}
 
 double statement()
 {
@@ -167,7 +199,15 @@ double statement()
 	switch (t.kind)
 	{
 	case let:
-		return declaration();
+		return declaration(var_k);
+	case const_k:
+	{
+					t = ts.get();
+					if (t.kind == let)
+						return declaration(const_k);
+					else
+						error("const error");
+	}
 	default:
 		ts.putback(t);
 		return expression();
@@ -192,7 +232,6 @@ double expression()
 		default:
 			ts.putback(t);
 			return left;
-
 		}
 	}
 }
@@ -260,8 +299,16 @@ double primary()
 		data = t.value;
 		break;
 	case name:
-		data = get_value(t.name);
-		break;
+	{
+				 Token t1 = ts.get();
+				 if (t1.kind == '=')
+					 sym_table.set(t.name, expression());
+				 else
+					 ts.putback(t1);
+				 data = sym_table.get(t.name);
+				 break;
+	}
+		
 	case sqrt_k:
 		data = get_sqrt();
 		break;
@@ -292,7 +339,7 @@ double primary()
 	}
 	return data;
 }
-double declaration()
+double declaration(char flag)
 {
 	Token t = ts.get();
 	if (t.kind != name)
@@ -304,7 +351,7 @@ double declaration()
 	if (t2.kind != '=')
 		error("= missing in declarations of ",var_name);
 	double d = expression();
-	define_name(var_name, d);
+	sym_table.declare(var_name, d, flag);
 	return d;
 }
 double get_sqrt()
@@ -498,6 +545,8 @@ Token Token_stream::get()
 				return Token(sqrt_k);
 			else if (s == powkey)
 				return Token(pow_k);
+			else if (s == constkey)
+				return Token(const_k);
 			return Token(name, s);
 		}
 		error("Bad token");
@@ -519,34 +568,37 @@ void Token_stream::ignore(char c)
 	}
 }
 
-double get_value(string name)
+Symbol_table::Symbol_table(){}
+double Symbol_table::get(string name)
 {
 	for (int i = 0; i < var_table.size();i++)
 	if (var_table[i].name == name)
 		return var_table[i].value;
 	error("get:undefined variable ", name);
 }
-void set_value(string name, double value)
+void Symbol_table::set(string name, double value)
 {
 	for (int i = 0; i < var_table.size();i++)
 	if (var_table[i].name == name)
 	{
-		var_table[i].value == value;
+		if (var_table[i].flag == const_k)
+			error("set: can't revise const variable ", name);
+		var_table[i].value = value;
 		return;
 	}
 	error("set: undefined variable ",name);
 }
-bool is_declared(string name)
+bool Symbol_table::is_declared(string name)
 {
 	for (int i = 0; i < var_table.size(); i++)
 	if (var_table[i].name == name)
 		return true;
 	return false;
 }
-double define_name(string name, double value)
+double Symbol_table::declare(string name, double value, char flag)
 {
 	if (is_declared(name))
 		error(name, "declared twice");
-	var_table.push_back(Variable(name, value));
+	var_table.push_back(Variable(name, value,flag));
 	return value;
 }
