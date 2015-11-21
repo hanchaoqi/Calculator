@@ -12,6 +12,11 @@ const char name = 'v';
 const char let = 'L';
 const string declkey = "let";
 
+const char sqrt_k = 'S';
+const string sqrtkey = "sqrt";
+const char pow_k = 'P';
+const string powkey = "pow";
+
 class Token
 {
 public:
@@ -57,6 +62,8 @@ double expression();
 double term();
 double primary();
 double declaration();
+double get_sqrt();
+double get_pow();
 //For Logic Calculator
 int a();
 int b();
@@ -255,6 +262,12 @@ double primary()
 	case name:
 		data = get_value(t.name);
 		break;
+	case sqrt_k:
+		data = get_sqrt();
+		break;
+	case pow_k:
+		data = get_pow();
+		break;
 	case quit:
 		ts.putback(t);
 		return data;
@@ -294,6 +307,45 @@ double declaration()
 	define_name(var_name, d);
 	return d;
 }
+double get_sqrt()
+{
+	Token t = ts.get();
+	if (t.kind != '(')
+		error("In sqrt '(' expected");
+
+	double tmp = expression();
+
+	t = ts.get();
+	if (t.kind != ')')
+		error("In sqrt ')' excepted");
+	if (tmp < 0)
+		error("sqrt negative number");
+	return sqrt(tmp);
+}
+double get_pow()
+{
+	double result = 1;
+	Token t = ts.get();
+	if (t.kind != '(')
+		error("In pow '(' expected");
+
+	double tmp1 = expression();
+
+	t = ts.get();
+	if (t.kind != ',')
+		error("In pow ',' excepted");
+
+	double tmp2 = narrow_cast<int>(expression());
+
+	t = ts.get();
+	if (t.kind != ')')
+		error("In pow ')' excepted");
+
+	for (int i = 0; i < tmp2; i++)
+		result *= tmp1;
+	return result;
+}
+
 
 int a()
 {
@@ -414,12 +466,12 @@ Token Token_stream::get()
 		return buffer;
 	}
 	char ch;
-	cin >> ch;
+	cin>>ch;
 	switch (ch)
 	{
 	case quit:
 	case print:
-	case '=':
+	case '=': case ',':
 	case '(': case ')': case '{': case '}':
 	case '~': case '&': case '|': case '^':
 	case '+': case '-': case '*': case '/': case '%':case '!':
@@ -442,6 +494,10 @@ Token Token_stream::get()
 			cin.putback(ch);
 			if (s == declkey)
 				return Token(let);
+			else if (s == sqrtkey)
+				return Token(sqrt_k);
+			else if (s == powkey)
+				return Token(pow_k);
 			return Token(name, s);
 		}
 		error("Bad token");

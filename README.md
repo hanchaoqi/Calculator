@@ -1,5 +1,7 @@
 ﻿#Calculator
 >一个基于文法的计算器，来自于《C++程序设计原理与实践》
+**算术计算器**：支持+，-，*，/，%，sqrt()，pow()，！，（，），{，}，负数，用let关键词声明变量
+**逻辑计算器**：支持&，|，！，~，^，（，），{，}
 
 ##文法规则
 ###算术计算器
@@ -11,6 +13,8 @@
 - Statement
     - Declaration
     - Expression
+- Declaration
+	- "let" var_name"="Expression
 - Expression
 	 - Term
 	 - Expression"+"Term
@@ -26,6 +30,8 @@
 	- Primary"!"
 	- "-"Primary
 	- "+"Primary
+	- "sqrt""("Expression")"
+	- "pow""("Expresion","Expression")"
 - Number
 	- floating-point-literal 
 
