@@ -18,9 +18,21 @@
     <ClInclude Include="std_lib_facilities.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="token.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="symbol_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Calculator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="token.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="symbol_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
